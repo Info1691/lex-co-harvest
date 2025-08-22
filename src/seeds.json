@@ -1,0 +1,14 @@
+{
+  "jerseylaw.je": [
+    "https://www.jerseylaw.je/judgments/Pages/default.aspx"
+  ],
+  "legislation.gov.je": [
+    "https://www.legislation.gov.je/laws/revised/Pages/default.aspx"
+  ],
+  "jerseyfsc.org": [
+    "https://www.jerseyfsc.org/industry/codes-of-practice/"
+  ],
+  "bailii.org": [
+    "https://www.bailii.org/uk/cases/JRC/"
+  ]
+}
