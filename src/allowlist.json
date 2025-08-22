@@ -1,0 +1,7 @@
+{
+  "jerseylaw.je": ["/*"],
+  "legislation.gov.je": ["/*"],
+  "gov.je": ["/Law*", "/Government/*", "/News/*"],
+  "jerseyfsc.org": ["/*"],
+  "bailii.org": ["/ew/cases/JRC/*", "/uk/cases/JRC/*"]
+}
