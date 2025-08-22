@@ -1,7 +1,6 @@
 {
-  "jerseylaw.je": ["/*"],
-  "legislation.gov.je": ["/*"],
-  "gov.je": ["/Law*", "/Government/*", "/News/*"],
-  "jerseyfsc.org": ["/*"],
-  "bailii.org": ["/ew/cases/JRC/*", "/uk/cases/JRC/*"]
+  "hosts": [
+    "www.jerseylaw.je",
+    "www.legislation.gov.je"
+  ]
 }
