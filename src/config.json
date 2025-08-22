@@ -1,0 +1,10 @@
+{
+  "userAgent": "lex-harvest/0.1 (+https://example.invalid) compliant; contact: admin@example.invalid",
+  "concurrency": 4,
+  "rateLimitMs": 600,
+  "maxDepth": 3,
+  "maxPerHost": 300,
+  "timeoutMs": 25000,
+  "savePdf": true,
+  "saveHtmlAsTxt": true
+}
