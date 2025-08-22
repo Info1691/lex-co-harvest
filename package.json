@@ -1,0 +1,17 @@
+{
+  "name": "lex-co-harvest",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Allow-listed crawler/ingester for Jersey/CI legal sources with robots.txt, provenance, and publishing.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "harvest": "node src/crawler.mjs",
+    "publish": "node src/publish.mjs",
+    "start": "node src/crawler.mjs"
+  },
+  "dependencies": {
+    "cheerio": "1.0.0-rc.12",
+    "mime-types": "2.1.35",
+    "sanitize-filename": "1.6.3"
+  }
+}
