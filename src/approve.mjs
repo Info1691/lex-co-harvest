@@ -11,14 +11,13 @@ const approvals = JSON.parse(await fs.readFile(path.join(__dirname, 'approvals.j
 
 function match(url, pat){
   if (pat.endsWith('*')) return url.startsWith(pat.slice(0, -1));
-  return url === pat;
+  return url.startsWith(pat);
 }
+
 const allow = approvals.allow || [];
 const approved = (manifest.items || []).filter(m => allow.some(p => match(m.url, p)));
 
 await fs.writeFile(path.join(DIST, 'approved.json'), JSON.stringify({ items: approved }, null, 2));
-
-// also emit a catalog compatible with Agent 1:
 const catalogApproved = approved.map(m => ({
   title: m.title || m.url,
   subtitle: `${m.host} — harvested ${m.fetchedAt?.slice(0,10) || ''}`,
