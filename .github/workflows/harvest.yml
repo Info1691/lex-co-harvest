@@ -1,12 +1,18 @@
 name: Harvest & Publish
+
 on:
   workflow_dispatch: {}
   schedule:
     - cron: "0 4 * * 1"   # Mondays 04:00 UTC
 
+concurrency:
+  group: lex-co-harvest
+  cancel-in-progress: false
+
 jobs:
   harvest:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout harvester
         uses: actions/checkout@v4
@@ -15,34 +21,68 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
 
-      - name: Install
+      - name: Install dependencies
         run: npm ci
 
+      # 1) Crawl allow-listed sources -> dist/ (manifest.json, catalog.json, harvest/*)
       - name: Crawl (allow-listed)
         run: npm run harvest
 
-      - name: Publish to law-index gh-pages
+      # 2) Approval gate -> dist/approved.json + dist/catalog-approved.json
+      - name: Approval gate (filter to allow-list)
+        run: node src/approve.mjs
+
+      # 3) Publish artifacts to the public law-index repo (gh-pages)
+      - name: Publish to law-index (gh-pages)
         env:
-          GH_PAT: ${{ secrets.LAW_INDEX_PAT }}
-          LAW_INDEX_REPO: info1691/law-index
+          GH_PAT: ${{ secrets.LAW_INDEX_PAT }}        # <-- set this repo secret
+          LAW_INDEX_REPO: info1691/law-index          # <-- change if your index repo is named differently
         run: |
-          set -e
+          set -euxo pipefail
+
           git config --global user.email "actions@github.com"
           git config --global user.name  "gh-actions"
 
-          # clone gh-pages
-          git clone --depth=1 https://x-access-token:${GH_PAT}@github.com/${LAW_INDEX_REPO}.git outrepo
+          rm -rf outrepo
+          git clone --depth=1 "https://x-access-token:${GH_PAT}@github.com/${LAW_INDEX_REPO}.git" outrepo
           cd outrepo
-          git checkout gh-pages || git checkout -b gh-pages
 
+          # Ensure gh-pages exists
+          if ! git rev-parse --verify gh-pages >/dev/null 2>&1; then
+            git checkout --orphan gh-pages
+            rm -rf ./*
+            echo '<!doctype html><meta charset=utf-8><title>law-index</title>' > index.html
+            git add -A
+            git commit -m "init gh-pages"
+          else
+            git checkout gh-pages
+          fi
+
+          # Publish harvest outputs
           mkdir -p harvest
-          # remove old harvest; keep indexes (manifest.json, lexical.index.json) untouched
           rm -rf harvest/*
           cp -r ../dist/harvest/* harvest/ || true
-          cp ../dist/catalog.json harvest/catalog.json
-          cp ../dist/manifest.json harvest-manifest.json
+          cp ../dist/catalog.json          harvest/catalog.json
+          cp ../dist/manifest.json         harvest-manifest.json
+          # Approved-only views
+          cp ../dist/catalog-approved.json harvest/catalog-approved.json
+          cp ../dist/approved.json         harvest/approved.json
 
-          git add harvest harvest/catalog.json harvest-manifest.json
-          git commit -m "Update harvest ($(date -u +%F:%T))" || echo "No changes"
-          git push origin gh-pages
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Harvest update $(date -u +'%F %T UTC')"
+            git push origin gh-pages
+          else
+            echo "No changes to publish."
+          fi
+
+      # Optional: keep a copy of dist/ as a run artifact for debugging
+      - name: Upload dist artifact (debug)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 3
