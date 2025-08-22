@@ -12,9 +12,8 @@ concurrency:
 jobs:
   harvest:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout harvester
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node
@@ -23,22 +22,20 @@ jobs:
           node-version: "20"
           cache: "npm"
 
+      # Use npm install (no lockfile needed)
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
-      # 1) Crawl allow-listed sources -> dist/ (manifest.json, catalog.json, harvest/*)
       - name: Crawl (allow-listed)
         run: npm run harvest
 
-      # 2) Approval gate -> dist/approved.json + dist/catalog-approved.json
       - name: Approval gate (filter to allow-list)
         run: node src/approve.mjs
 
-      # 3) Publish artifacts to the public law-index repo (gh-pages)
       - name: Publish to law-index (gh-pages)
         env:
-          GH_PAT: ${{ secrets.LAW_INDEX_PAT }}        # <-- set this repo secret
-          LAW_INDEX_REPO: info1691/law-index          # <-- change if your index repo is named differently
+          GH_PAT: ${{ secrets.LAW_INDEX_PAT }}        # <-- set this secret on this repo
+          LAW_INDEX_REPO: info1691/law-index          # <-- change if your public repo name differs
         run: |
           set -euxo pipefail
 
@@ -49,26 +46,22 @@ jobs:
           git clone --depth=1 "https://x-access-token:${GH_PAT}@github.com/${LAW_INDEX_REPO}.git" outrepo
           cd outrepo
 
-          # Ensure gh-pages exists
           if ! git rev-parse --verify gh-pages >/dev/null 2>&1; then
             git checkout --orphan gh-pages
             rm -rf ./*
             echo '<!doctype html><meta charset=utf-8><title>law-index</title>' > index.html
-            git add -A
-            git commit -m "init gh-pages"
+            git add -A && git commit -m "init gh-pages"
           else
             git checkout gh-pages
           fi
 
-          # Publish harvest outputs
           mkdir -p harvest
           rm -rf harvest/*
           cp -r ../dist/harvest/* harvest/ || true
           cp ../dist/catalog.json          harvest/catalog.json
           cp ../dist/manifest.json         harvest-manifest.json
-          # Approved-only views
-          cp ../dist/catalog-approved.json harvest/catalog-approved.json
-          cp ../dist/approved.json         harvest/approved.json
+          cp ../dist/catalog-approved.json harvest/catalog-approved.json || true
+          cp ../dist/approved.json         harvest/approved.json || true
 
           git add -A
           if ! git diff --cached --quiet; then
@@ -78,7 +71,6 @@ jobs:
             echo "No changes to publish."
           fi
 
-      # Optional: keep a copy of dist/ as a run artifact for debugging
       - name: Upload dist artifact (debug)
         if: always()
         uses: actions/upload-artifact@v4
