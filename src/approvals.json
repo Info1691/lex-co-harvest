@@ -1,7 +1,6 @@
 {
   "allow": [
-    // Exact URLs or prefix globs. Examples:
-    // "https://www.jerseylaw.je/judgments/2024/..",
-    // "https://www.legislation.gov.je/laws/revised/Pages/*"
+    "https://www.jerseylaw.je/",
+    "https://www.legislation.gov.je/"
   ]
 }
