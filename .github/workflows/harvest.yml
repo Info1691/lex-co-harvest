@@ -3,10 +3,10 @@ name: Harvest & Publish
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "0 4 * * 1"   # Mondays 04:00 UTC
+    - cron: "0 4 * * 1"
 
 concurrency:
-  group: lex-co-harvest
+  group: lex-ci-harvest
   cancel-in-progress: false
 
 jobs:
@@ -22,7 +22,6 @@ jobs:
           node-version: "20"
           cache: "npm"
 
-      # Use npm install (no lockfile needed)
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
@@ -34,18 +33,15 @@ jobs:
 
       - name: Publish to law-index (gh-pages)
         env:
-          GH_PAT: ${{ secrets.LAW_INDEX_PAT }}        # <-- set this secret on this repo
-          LAW_INDEX_REPO: info1691/law-index          # <-- change if your public repo name differs
+          GH_PAT: ${{ secrets.LAW_INDEX_PAT }}
+          LAW_INDEX_REPO: info1691/law-index   # unchanged
         run: |
           set -euxo pipefail
-
           git config --global user.email "actions@github.com"
           git config --global user.name  "gh-actions"
-
           rm -rf outrepo
           git clone --depth=1 "https://x-access-token:${GH_PAT}@github.com/${LAW_INDEX_REPO}.git" outrepo
           cd outrepo
-
           if ! git rev-parse --verify gh-pages >/dev/null 2>&1; then
             git checkout --orphan gh-pages
             rm -rf ./*
@@ -54,7 +50,6 @@ jobs:
           else
             git checkout gh-pages
           fi
-
           mkdir -p harvest
           rm -rf harvest/*
           cp -r ../dist/harvest/* harvest/ || true
@@ -62,7 +57,6 @@ jobs:
           cp ../dist/manifest.json         harvest-manifest.json
           cp ../dist/catalog-approved.json harvest/catalog-approved.json || true
           cp ../dist/approved.json         harvest/approved.json || true
-
           git add -A
           if ! git diff --cached --quiet; then
             git commit -m "Harvest update $(date -u +'%F %T UTC')"
