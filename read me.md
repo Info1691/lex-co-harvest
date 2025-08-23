@@ -1,4 +1,4 @@
-# lex-co-harvest
+# lex-ci-harvest
 
 Private harvester for curated sources.
 
